@@ -1,11 +1,14 @@
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TokenType {
     Print,
-    Int,
+    IntLiteral,
+    StringLiteral,
     Semicolon,
+    LeftParent,
+    RightParent,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     pub tokentype: TokenType,
     pub value: Option<String>,
@@ -37,6 +40,31 @@ impl Lexer {
                     tokentype: TokenType::Semicolon,
                     value: None,
                 }),
+                '(' => self.tokens.push(Token {
+                    tokentype: TokenType::LeftParent,
+                    value: None,
+                }),
+                ')' => self.tokens.push(Token {
+                    tokentype: TokenType::RightParent,
+                    value: None,
+                }),
+                '"' => {
+                    let mut value = String::new();
+
+                    while self.peek().is_alphanumeric() || self.peek().is_whitespace() {
+                        value.push(self.advance());
+                    }
+
+                    if self.peek() == '"' {
+                        self.advance();
+                        self.tokens.push(Token {
+                            tokentype: TokenType::StringLiteral,
+                            value: Some(value.clone()),
+                        })
+                    } else {
+                        panic!("expected \"");
+                    }
+                }
                 c => {
                     if c.is_alphabetic() {
                         buf.push(c);
@@ -60,7 +88,7 @@ impl Lexer {
                         }
 
                         self.tokens.push(Token {
-                            tokentype: TokenType::Int,
+                            tokentype: TokenType::IntLiteral,
                             value: Some(buf.clone()),
                         });
 
